@@ -65,7 +65,7 @@ Faker**
 -   `data/` --- anonymized analytical dataset
 -   `dashboard/` --- packaged Tableau workbook
 -   `process/` --- recruitment process flowchart
--   `documentation/` --- As-Is process and data audit
+-   'notebooks/' --- python notebooks
 -   `README.md` --- project overview
 -   `SOLUTIONS.md` --- detailed findings, analysis, and recommendations
 
