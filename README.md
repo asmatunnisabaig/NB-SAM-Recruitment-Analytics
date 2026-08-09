@@ -62,12 +62,12 @@ Faker**
 
 ## Repository Contents
 
--   `data/` --- anonymized analytical dataset
--   `dashboard/` --- packaged Tableau workbook
--   `process/` --- recruitment process flowchart
--   'notebooks/' --- python notebooks
--   `README.md` --- project overview
--   `SOLUTIONS.md` --- detailed findings, analysis, and recommendations
+- `data/` — anonymized analytical dataset
+- `dashboard/` — packaged Tableau workbook
+- `process/` — recruitment process flowchart
+- `notebooks/` — Python notebooks for data cleaning, synthetic data generation, and data-quality analysis
+- `README.md` — project overview
+- `SOLUTIONS.md` — detailed findings, analysis, and recommendations
 
 ## Data Privacy
 
