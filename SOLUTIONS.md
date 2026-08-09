@@ -1,353 +1,150 @@
-# NB SAM Recruitment Analytics --- Detailed Findings & Solutions
+# NB SAM Recruitment Analytics — Detailed Findings & Solutions
 
-This document contains the detailed business analysis behind the
-project. The main `README.md` is intentionally kept short for portfolio
-visitors; this file provides the deeper findings, methodology, and
-recommendations.
+This document contains the detailed business analysis behind the project. The main `README.md` is kept short for portfolio visitors; this file provides the deeper findings, methodology, and recommendations.
 
-------------------------------------------------------------------------
+---
 
 ## 1. Business Process
 
 The operational recruitment process broadly follows:
 
-`Sourcing → Initial Call → Profile & Credential Verification → Suitability Decision → Coaching/Training Pitch → Candidate Tracking → Client Submission → Client Assessment/Interview → Selection/Placement`
+**Sourcing → Initial Call → Profile & Credential Verification → Suitability Decision → Coaching/Training Pitch → Candidate Tracking → Client Submission → Client Assessment/Interview → Selection/Placement**
 
-The process analysis identified gaps in data capture at several stages.
+Process analysis identified gaps in data capture at several stages:
 
-### Major process gaps
+- Candidate searches and calls from recruitment portals are not consistently tracked
+- Candidates who reject the training/coaching pitch may disappear from the tracking system entirely, rather than being logged as a "declined" outcome
+- Candidate details are entered manually into Excel — no validation, no structured status field
+- Client updates are stored as free-text remarks rather than structured fields
+- Final selected/not-selected/placed outcomes are not reliably captured
 
--   Candidate searches and calls from recruitment portals are not
-    consistently tracked.
--   Candidates who reject the training/coaching pitch may disappear from
-    the tracking system.
--   Candidate details are manually entered into Excel.
--   Client updates are often stored as free-text remarks.
--   Final selected/not-selected/placed outcomes are not reliably
-    captured in the dataset.
-
-------------------------------------------------------------------------
+---
 
 ## 2. Data Methodology
 
-### Real dataset
+**Real dataset**: 77 real recruitment records.
 
-The project began with **77 real recruitment records**.
+**Python (Google Colab)** was used to standardize skill names, fix date formats, convert notice periods to numeric values, replace placeholders with true nulls, and standardize categorical fields ahead of PostgreSQL analysis.
 
-Python/Google Colab was used to:
+**PostgreSQL** analysis on the 77-row real dataset served two purposes: (1) extracting real distribution parameters to guide synthetic data generation, and (2) surfacing the operational patterns behind the recommendations in this document.
 
--   standardize skill names
--   clean date formats
--   convert notice periods to numeric values
--   replace placeholder values with nulls
--   standardize categorical fields
--   prepare the dataset for PostgreSQL analysis
+**Synthetic dataset**: 723 rows generated with Faker and NumPy, matched to the real data's distributions. Final dataset: 77 real + 723 synthetic = **800 analytical records**. Synthetic records are explicitly analytical/simulation data, not real candidates.
 
-### PostgreSQL
+**Validation** — combined (800) metrics against the real (77) baseline:
 
-The real 77-row dataset was analyzed in PostgreSQL to:
+| Metric | Combined (800) | Real (77) | Difference |
+|---|---:|---:|---:|
+| Avg Relevant Experience | 7.2 yrs | 7.72 yrs | -6.7% |
+| Avg Current CTC | 14.9L | 15.65L | -4.8% |
+| Avg Expected CTC | 19.9L | 21.22L | -6.2% |
+| Candidate Share % | 77.1% | 75.32% | +2.4 pp |
+| Duplicate % | 4.6% | 3.9% | +0.7 pp |
 
-1.  understand the real data distributions for synthetic-data generation
-2.  identify operational patterns used in the business recommendations
+The first four metrics stay close to the real-data baseline — normal sampling variance for a distribution-matched synthetic sample. Duplicate % differs by only 0.7 percentage points in absolute terms — the larger relative gap (~18%) is a small-base-rate artifact (~3 real duplicates out of 77 candidates), not a generator defect.
 
-### Synthetic dataset
+---
 
-**723 synthetic rows** were generated using Faker and NumPy.
+## 3. Finding: Interview Conversion Is Low, and Volume ≠ Quality
 
-Final dataset:
+Only **8.4%** of shared profiles reach the interview stage.
 
-`77 real + 723 synthetic = 800 analytical records`
+**Masarrat** handles the highest volume (255 shared profiles) but converts at just **5.1%**. **Sharf** converts at **12.4%** — more than double the rate — on less than half the volume.
 
-The synthetic records are explicitly treated as analytical/simulation
-data rather than real company candidates.
+**Business interpretation**: high recruiter activity does not necessarily translate into high-quality client progression. Recruiter performance should be evaluated on both activity/volume *and* conversion/quality, not volume alone.
 
-### Validation
+**So what**: if Masarrat's interview rate matched Sharf's 12.4% rate on the same 255-profile volume, it would theoretically result in approximately **19 additional interviews** — a hypothetical illustration of the efficiency gap, not an actual historical result.
 
-  Metric                      Combined (800)   Real (77)
-  ------------------------- ---------------- -----------
-  Avg Relevant Experience            7.2 yrs    7.72 yrs
-  Avg Current CTC                      14.9L      15.65L
-  Avg Expected CTC                     19.9L      21.22L
-  Candidate Share %                    77.1%      75.32%
-  Duplicate %                           4.6%        3.9%
+**Recommendation**: audit the screening and Profile & Credential Verification practices used by higher-converting recruiters and standardize what works across the team.
 
-The first four metrics remain reasonably close to the real-data
-baseline. Duplicate percentage differs by only 0.7 percentage points,
-with the relative difference amplified by the small number of real
-duplicates.
+---
 
-------------------------------------------------------------------------
+## 4. Finding: Internal Rejection Rate Suggests Screening Needs Tightening
 
-## 3. Finding: Interview Conversion
+The Internal Reject rate is **18.3%** — nearly 1 in 5 profiles never progress beyond internal review.
 
-Only **8.4% of shared profiles reach the interview stage**.
+**Business interpretation**: a meaningful share of mismatches are being caught later in the process than they need to be, after recruiter time has already been spent.
 
-Masarrat handles the highest volume at **255 shared profiles**, but has
-an interview rate of **5.1%**. Sharf has an interview rate of **12.4%**
-on less than half the volume.
+**So what**: cutting this by even 5 points would mean roughly **40 fewer wasted submissions** per 800 candidates processed — time recruiters could redirect toward higher-converting profiles instead.
 
-### Business interpretation
+**Recommendation**: introduce a lightweight suitability checklist at the Initial Candidate Phone Call / Profile Verification stage, covering: required skill match, relevant experience, total experience, notice period, expected CTC, location, and client-specific requirements.
 
-High recruiter activity does not necessarily translate into high-quality
-client progression.
+---
 
-### Recommendation
+## 5. Finding: Final Outcomes Are Missing — the Highest-Value Data Gap
 
-Audit the screening and **Profile & Credential Verification** practices
-used by higher-converting recruiters and identify practices that can be
-standardized.
+The broader operational process continues past Interview to **Client Assessment → Selected/Not Selected → Placement**. The dataset does not reliably capture these final outcomes, so the analytical funnel currently stops at **Candidate Records → Profiles Shared → Interview**.
 
-Recruiter performance should therefore consider both:
+**Business impact**: without final outcomes, it's not possible to calculate Final Placement Rate, Time-to-Fill, Offer Acceptance Rate, or Cost-per-Hire — four of the metrics a staffing business would typically use to evaluate its own performance.
 
--   activity/volume
--   conversion/quality
+**Recommendation**: extend the tracking system with structured outcome fields — Client Interview Date, Interview Result, Selection Status, Offer Date, Offer Accepted, Placement Date, Final Outcome. This is the single highest-value data improvement identified in this project, since it unlocks four new KPIs from data the company is likely already generating but not capturing.
 
-rather than volume alone.
+---
 
-------------------------------------------------------------------------
+## 6. Finding: Duplicate Records — a Process Issue, Not a Recruiter Issue
 
-## 4. Finding: Internal Rejection
+Duplicate rates run **3.5%–5.4%** across recruiters, with no single recruiter standing out as a clear outlier.
 
-The **Internal Reject rate is 18.3%**.
+**Business interpretation**: since the rate is consistent across the team, this points to a process-level gap (no shared pre-submission check) rather than an individual training issue.
 
-This means a substantial proportion of profiles do not progress beyond
-internal review.
+**Recommendation**: introduce a centralized duplicate check before client submission, using email, phone number, candidate ID, or a normalized name + skill combination as the match key.
 
-### Business interpretation
+---
 
-Some mismatches may be detected relatively late in the screening
-process.
+## 7. Finding: Compensation Expectations Are Hike-Driven, Not Experience-Driven
 
-### Recommendation
+Most candidates expect a CTC higher than their current CTC. Current CTC has only a **weak** relationship with experience.
 
-Introduce a lightweight suitability checklist during the initial
-candidate phone call and profile-verification stages.
+**Business interpretation**: years of experience alone does not fully explain compensation expectations, suggesting that skill and client requirements may also play a role. Note that this analysis reflects candidate *expectations*, not confirmed offers, since final placement outcomes aren't available in the tracking data (see Finding 5).
 
-Possible fields:
+**Recommendation**: consider a skill/client-oriented rate-card framework for compensation conversations, rather than one anchored primarily on years of experience.
 
--   Required skill match
--   Relevant experience
--   Total experience
--   Notice period
--   Expected CTC
--   Location
--   Client-specific requirements
-
-This can reduce recruiter effort spent on unsuitable profiles.
-
-------------------------------------------------------------------------
-
-## 5. Finding: Missing Final Outcomes
-
-The broader operational process continues to:
-
-`Client Assessment → Selected / Not Selected → Placement`
-
-However, the available recruitment dataset does not reliably capture
-these final outcomes.
-
-Therefore, the analytical funnel currently stops at:
-
-`Candidate Records → Profiles Shared → Interview`
-
-### Business impact
-
-The absence of final outcomes prevents reliable calculation of:
-
--   Final placement rate
--   Time-to-Fill
--   Offer Acceptance Rate
--   Cost-per-Hire
-
-### Recommendation
-
-Extend the tracking system with structured outcome fields:
-
--   Client Interview Date
--   Interview Result
--   Selection Status
--   Offer Date
--   Offer Accepted
--   Placement Date
--   Final Outcome
-
-This is the highest-value data improvement identified in the project.
-
-------------------------------------------------------------------------
-
-## 6. Finding: Duplicate Records
-
-Duplicate rates are approximately **3.5%--5.4% across recruiters**.
-
-No single recruiter is a clear duplicate outlier.
-
-### Business interpretation
-
-The issue appears more suitable for a process-level solution than
-individual recruiter retraining.
-
-### Recommendation
-
-Introduce a centralized duplicate check before client submission using
-identifiers such as:
-
--   email
--   phone number
--   candidate ID
--   normalized name + skill combination where appropriate
-
-------------------------------------------------------------------------
-
-## 7. Finding: Compensation Expectations
-
-Most candidates expect a CTC higher than their current CTC.
-
-Current CTC has only a weak relationship with experience.
-
-### Business interpretation
-
-Years of experience alone may not explain compensation expectations.
-Skill and client requirements may also influence expected compensation.
-
-### Recommendation
-
-Consider a skill/client-oriented compensation or rate-card framework
-instead of relying primarily on years of experience.
-
-> Salary-hike analysis represents candidate expectations, not confirmed
-> offers, because final placement outcomes are not available in the
-> tracking data.
-
-------------------------------------------------------------------------
+---
 
 ## 8. Finding: Skill Concentration
 
-Recruitment activity is concentrated in a relatively small number of
-skills, including:
+Recruitment activity concentrates in a small set of skills: **SAP MM, Senior Oracle Retail, SAP ABAP, SAP FICO**.
 
--   SAP MM
--   Senior Oracle Retail
--   SAP ABAP
--   SAP FICO
+**Recommendation**: prioritize sourcing effort, recruiter search time, and coaching/training capacity around these consistently high-demand skills rather than spreading effort evenly.
 
-### Recommendation
-
-Prioritize:
-
--   candidate sourcing
--   recruiter search effort
--   coaching capacity
--   training resources
-
-around consistently high-demand skills.
-
-------------------------------------------------------------------------
+---
 
 ## 9. Data-Quality Recommendations
 
-### Standardize candidate status
+- **Standardize candidate status** — replace inconsistent free-text statuses with a controlled pipeline: Sourced → Contacted → Screened → Training Pitched → Client Shared → Interview → Selected/Rejected → Placed
+- **Standardize client updates** — structured fields instead of free-text remarks
+- **Centralize candidate data** — move from fragmented Excel tracking to a structured database or lightweight CRM
+- **Track all candidates** — candidates who decline the training/coaching pitch should get a recorded outcome, not disappear from the dataset
+- **Add input validation** — dropdowns, mandatory fields, date validation, standardized categories
 
-Replace inconsistent/free-text statuses with controlled stages:
-
-`Sourced → Contacted → Screened → Training Pitched → Client Shared → Interview → Selected/Rejected → Placed`
-
-### Standardize client updates
-
-Use structured fields instead of relying primarily on remarks.
-
-### Centralize candidate data
-
-Move from fragmented/manual Excel tracking toward a structured database
-or lightweight CRM.
-
-### Track all candidates
-
-Candidates who reject training/coaching should still receive a recorded
-outcome rather than disappearing from the dataset.
-
-### Add validation
-
-Use dropdowns, mandatory fields, date validation, and standardized
-categories.
-
-------------------------------------------------------------------------
+---
 
 ## 10. Recommended Future KPI Framework
 
-Once final outcome data is captured, the company can expand its KPI
-framework to include:
+**Currently measurable**: Total Candidates, Profiles Shared, Interview Rate, Internal Reject Rate, Duplicate Rate, Average Experience, Current CTC, Expected CTC, Notice Period.
 
-### Current KPIs
+**Unlocked once outcome data is captured** (Finding 5): Selection Rate, Placement Rate, Time-to-Fill, Offer Acceptance Rate, Cost-per-Hire, Client Conversion Rate, Recruiter Quality/Conversion, Source-to-Interview Conversion, Source-to-Placement Conversion.
 
--   Total Candidates
--   Profiles Shared
--   Interview Rate
--   Internal Reject Rate
--   Duplicate Rate
--   Average Experience
--   Current CTC
--   Expected CTC
--   Notice Period
-
-### Future KPIs
-
--   Selection Rate
--   Placement Rate
--   Time-to-Fill
--   Offer Acceptance Rate
--   Cost-per-Hire
--   Client Conversion Rate
--   Recruiter Quality/Conversion
--   Source-to-Interview Conversion
--   Source-to-Placement Conversion
-
-------------------------------------------------------------------------
+---
 
 ## 11. Dashboard Purpose
 
-### Executive Overview
+- **Executive Overview** — "How healthy is recruitment?" Overall funnel, trends, clients, skills, top-level KPIs.
+- **Recruitment Operations** — "How is performance distributed across recruiters and clients?" Recruiter conversion, duplicate patterns, skill demand, client requirements.
+- **Market & Candidate Analytics** — "What does the candidate pool look like?" Experience, compensation expectations, skills, locations.
 
-Answers:
+---
 
-> **How healthy is recruitment?**
+## 12. Known Limitations
 
-Focuses on overall funnel performance, trends, clients, skills, and
-KPIs.
+- **CTC Scatter outlier**: one candidate in the internal dataset shows a ~302% expected-hike ask. The point was flagged as a known outlier, either a legitimate senior-role jump or a possible data-entry anomaly, and was retained rather than silently removed.
+- **Combo-recruiter entries retained**: the recruiter field includes joint-credit entries (e.g. two recruiters sharing a candidate). These were kept as a distinct category rather than split between individuals, to avoid double-counting placements across recruiters.
 
-### Recruitment Operations
+---
 
-Answers:
-
-> **How is recruitment performance distributed across recruiters and
-> clients?**
-
-Focuses on recruiter conversion, duplicate patterns, skill demand, and
-client requirements.
-
-### Market & Candidate Analytics
-
-Answers:
-
-> **What does the candidate pool look like?**
-
-Focuses on experience, compensation expectations, skills, and locations.
-
-------------------------------------------------------------------------
-
-## 12. Final Business Value
+## 13. Final Business Value
 
 The project moves the recruitment function from:
 
-`Manual Tracking → Structured Data → Analysis → Measurement → Decision Support`
+**Manual Tracking → Structured Data → Analysis → Measurement → Decision Support**
 
-The most important outcome is not the Tableau dashboard itself. The
-project establishes a framework for NB SAM to:
-
--   understand its recruitment funnel
--   identify process bottlenecks
--   compare recruiter performance
--   understand skill demand
--   improve candidate screening
--   reduce duplicate records
--   capture missing outcomes
--   build a more reliable recruitment analytics system
+The Tableau dashboard is the visible output, but the underlying value is the framework it establishes for NB SAM to understand its recruitment funnel, identify process bottlenecks, compare recruiter performance, understand skill demand, improve candidate screening, reduce duplicate records, capture missing outcomes, and build a more reliable recruitment analytics system going forward.
