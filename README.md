@@ -64,11 +64,12 @@ Faker**
 
 - `data/` — anonymized analytical dataset
 - `dashboard/` — packaged Tableau workbook
-- `process/` — recruitment process flowchart
+- `process/` — recruitment process flowchart and process/data audit
 - `notebooks/` — Python notebooks for data cleaning, synthetic data generation, and data-quality analysis
+- `sql/` — PostgreSQL queries used for recruitment analysis
 - `README.md` — project overview
 - `SOLUTIONS.md` — detailed findings, analysis, and recommendations
-
+- 
 ## Data Privacy
 
 The public repository contains only anonymized data. Candidate names,
