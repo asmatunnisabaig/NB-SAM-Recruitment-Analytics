@@ -2,8 +2,6 @@
 
 During the internship, the recruitment team maintained candidate information through an Excel-based **Daily Update** file. The file was primarily used as an operational tracker and was manually updated as candidates progressed through different stages of the recruitment process.
 
-The audit was conducted to understand how the existing recruitment process worked, what information was being captured, and what issues would need to be addressed before the data could be used for recruitment analytics.
-
 ## As-Is Recruitment Process
 
 The recruitment workflow identified from the existing process broadly followed:
@@ -88,11 +86,5 @@ The Daily Update was useful as an **operational recruitment tracker**, but it wa
 The audit identified three main requirements:
 
 **Standardize the existing data → Capture missing recruitment outcomes → Separate operational PII from analytical data**
-
-These findings formed the basis for the subsequent **Python data cleaning, PostgreSQL analysis, synthetic-data generation, Tableau dashboard development, and business recommendations**.
-
-The project therefore progressed from:
-
-**As-Is Excel Tracking → Clean Structured Data → Analysis → Dashboard → Business Recommendations**
 
 > **Confidentiality:** The original Daily Update and real candidate-level data are confidential and are not included in this public repository.
