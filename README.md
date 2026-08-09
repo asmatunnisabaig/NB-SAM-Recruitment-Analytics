@@ -69,7 +69,6 @@ Faker**
 - `sql/` — PostgreSQL queries used for recruitment analysis
 - `README.md` — project overview
 - `SOLUTIONS.md` — detailed findings, analysis, and recommendations
-- 
 ## Data Privacy
 
 The public repository contains only anonymized data. Candidate names,
